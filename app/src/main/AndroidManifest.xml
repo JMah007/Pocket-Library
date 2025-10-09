@@ -12,6 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PocketLibrary">
         <activity
+            android:name=".AddBookActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PocketLibrary" />
+        <activity
+            android:name=".SearchActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
