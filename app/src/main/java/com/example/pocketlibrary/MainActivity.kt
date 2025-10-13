@@ -6,6 +6,7 @@ import android.widget.ImageButton
 import android.widget.SearchView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,6 +17,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchQuery: SearchView
     private lateinit var booksRecyclerView: RecyclerView
 
+    private var fullBookList: List<Book> = emptyList()
+
     // This is the only instance of the ViewModel you need.
     // The 'by viewModels()' delegate handles its lifecycle correctly.
     private val favouritesViewModel: FavouritesViewModel by viewModels()
@@ -23,6 +26,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
 
         // --- 1. Find all views by their ID ---
         searchBtn = findViewById(R.id.searchActivityButton)
@@ -47,6 +52,7 @@ class MainActivity : AppCompatActivity() {
         favouritesViewModel.savedBooks.observe(this) { books ->
             // The 'books' variable is the List<Book> from your database.
             // When we receive it, we give it to the adapter to display.
+            this.fullBookList = books
             bookAdapter.setData(books)
         }
 
@@ -60,5 +66,36 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, SearchActivity::class.java)
             startActivity(intent)
         }
+
+
+
+        searchQuery.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                // dont implement
+                return false
+
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val currentSearchText = newText.orEmpty()
+
+                // --- 4. FIX: Implement the filtering logic ---
+                val filteredList = if (currentSearchText.isEmpty()) {
+                    // If search is empty, show the full list
+                    fullBookList
+                } else {
+                    // Otherwise, filter the full list
+                    fullBookList.filter { book ->
+                        // Check if the book's title or author contains the search text (case-insensitive)
+                        book.title.contains(currentSearchText, ignoreCase = true) ||
+                                book.author.contains(currentSearchText, ignoreCase = true)
+                    }
+                }
+                // Update the adapter with the new filtered list
+                bookAdapter.setData(filteredList)
+                return true
+            }
+        })
+
     }
 }
