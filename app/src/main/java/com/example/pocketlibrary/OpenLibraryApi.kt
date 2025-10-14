@@ -1,14 +1,14 @@
 package com.example.pocketlibrary
 
-import retrofit2.http.GET
-import retrofit2.http.Query
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Query
 
-// Retrofit API Interface
-interface OpenLibraryApiService {
+// Retrofit interface
+interface OpenLibraryService {
     @GET("search.json")
     suspend fun searchBooks(
         @Query("q") query: String,
@@ -17,46 +17,51 @@ interface OpenLibraryApiService {
     ): OpenLibraryResponse
 }
 
-// Response Data Classes
+// Response data classes
 @JsonClass(generateAdapter = true)
 data class OpenLibraryResponse(
-    val docs: List<OpenLibraryBook>
+    val docs: List<Doc>
 )
 
 @JsonClass(generateAdapter = true)
-data class OpenLibraryBook(
+data class Doc(
     val title: String?,
     @Json(name = "author_name") val authorName: List<String>?,
     @Json(name = "first_publish_year") val firstPublishYear: Int?,
     @Json(name = "cover_i") val coverId: Int?
-) {
-    fun toBook(): Book {
-        return Book(
-            title = title ?: "Unknown Title",
-            author = authorName?.firstOrNull() ?: "Unknown Author",
-            year = firstPublishYear?.toString() ?: "Unknown Year",
-            addedManually = false,
-            coverUrl = coverId?.let { "https://covers.openlibrary.org/b/id/${it}-S.jpg" }
-        )
-    }
-}
+)
 
-// Singleton object for API
+// Singleton API object
 object OpenLibraryAPI {
-    private val retrofit = Retrofit.Builder()
-        .baseUrl("https://openlibrary.org/")
-        .addConverterFactory(MoshiConverterFactory.create())
-        .build()
+    private const val BASE_URL = "https://openlibrary.org/"
 
-    private val service = retrofit.create(OpenLibraryApiService::class.java)
+    private val service: OpenLibraryService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create())
+            .build()
+            .create(OpenLibraryService::class.java)
+    }
 
-    // Function to call API and return List<Book>
     suspend fun searchBooks(query: String): List<Book> {
         if (query.isBlank()) return emptyList()
 
         return try {
             val response = service.searchBooks(query)
-            response.docs.map { it.toBook() }
+            response.docs.map { doc ->
+                val title = doc.title ?: "Unknown Title"
+                val author = doc.authorName?.firstOrNull() ?: "Unknown Author"
+                val year = doc.firstPublishYear?.toString() ?: "Unknown Year"
+                val coverUrl = doc.coverId?.let { "https://covers.openlibrary.org/b/id/${it}-S.jpg" }
+
+                Book(
+                    title = title,
+                    author = author,
+                    year = year,
+                    addedManually = false,
+                    coverUrl = coverUrl
+                )
+            }
         } catch (e: Exception) {
             emptyList()
         }

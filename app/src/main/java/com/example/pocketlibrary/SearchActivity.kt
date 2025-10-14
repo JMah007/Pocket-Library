@@ -4,16 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 
 class SearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,10 +40,14 @@ class SearchActivity : ComponentActivity() {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Results List
-                LazyColumn {
-                    items(results) { book ->
-                        BookResultItem(book)
-                        Divider()
+                if (results.isEmpty()) {
+                    Text("No results yet", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    LazyColumn {
+                        items(results) { book ->
+                            BookResultItem(book)
+                            Divider()
+                        }
                     }
                 }
             }
@@ -75,7 +82,10 @@ fun BookResultItem(book: Book) {
     ) {
         // Book Cover
         AsyncImage(
-            model = book.coverUrl,
+            model = ImageRequest.Builder(LocalContext.current)
+                .data(book.coverUrl)
+                .crossfade(true)
+                .build(),
             contentDescription = "Book Cover",
             modifier = Modifier.size(80.dp)
         )

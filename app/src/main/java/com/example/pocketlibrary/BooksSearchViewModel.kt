@@ -18,8 +18,17 @@ class BooksSearchViewModel(application: Application) : AndroidViewModel(applicat
 
     fun search(query: String) {
         viewModelScope.launch {
-            val data = OpenLibraryAPI.searchBooks(query)
-            _results.value = data
+            try {
+                if (query.isBlank()) {
+                    _results.value = emptyList()
+                    return@launch
+                }
+
+                val books = OpenLibraryAPI.searchBooks(query)
+                _results.value = books
+            } catch (e: Exception) {
+                _results.value = emptyList()
+            }
         }
     }
 }
