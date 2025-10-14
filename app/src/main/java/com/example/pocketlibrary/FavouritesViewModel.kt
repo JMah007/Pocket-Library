@@ -1,12 +1,17 @@
 package com.example.pocketlibrary
 
 import android.app.Application
+import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -18,23 +23,48 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
 
     private val bookDao = AppDatabase.getDatabase(application).bookDao()
 
-    // 1. A private, changeable (Mutable) LiveData that only the ViewModel can modify.
     private val _savedBooks = MutableLiveData<List<Book>>()
 
-    // 2. A public, un-changeable LiveData for the UI to observe.
-    // The UI can read this data, but cannot change it.
     val savedBooks: LiveData<List<Book>> = _savedBooks
 
-    // 3. The 'init' block runs once when the ViewModel is first created.
-    // This is where we start listening for database updates.
     init {
-        // Also save all books in local to firebase and catch if it fails
+        // Explicitly tell Firebase to connect and start syncing its offline queue.
+        FirebaseDatabase.getInstance().goOnline()
+
+        // Start observing the local Room database for instant UI updates.
         viewModelScope.launch {
             bookDao.getAllBooksFlow().collectLatest { bookList ->
                 _savedBooks.postValue(bookList)
             }
         }
+
+        // Create the persistent listener that keeps Room in sync with Firebase.
+        val firebaseListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                viewModelScope.launch {
+                    val firebaseBooks = mutableListOf<Book>()
+                    for (snapshot in dataSnapshot.children) {
+                        val book = snapshot.getValue(Book::class.java)
+                        if (book != null) {
+                            firebaseBooks.add(book) // Collects all books that are in firebase
+                        }
+                    }
+
+                    // Adds all books in firebase local room to display from
+                    bookDao.insertAll(firebaseBooks)
+                }
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.w("FirebaseSync", "Failed to read value.", databaseError.toException())
+            }
+        }
+
+        // Attach the listener to your database reference.
+        database.addValueEventListener(firebaseListener)
     }
+
+
 
     fun deleteBook(id: String) {
         viewModelScope.launch {
@@ -43,8 +73,7 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    // This is the correct, asynchronous way to provide a single book.
-    // It returns a LiveData object that the UI can observe.
+
     fun getBookById(id: String): LiveData<Book?> {
         return bookDao.getBookByIdLive(id)
     }

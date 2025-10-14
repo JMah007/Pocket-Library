@@ -4,8 +4,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.ImageButton
 import android.widget.SearchView
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.semantics.text
 
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var addBtn: ImageButton
     private lateinit var searchQuery: SearchView
     private lateinit var booksRecyclerView: RecyclerView
+    private lateinit var bookCount: TextView
 
     private var fullBookList: List<Book> = emptyList()
 
@@ -27,13 +30,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-
-
-        // --- 1. Find all views by their ID ---
         searchBtn = findViewById(R.id.searchActivityButton)
         addBtn = findViewById(R.id.addButton)
         searchQuery = findViewById(R.id.searchView)
         booksRecyclerView = findViewById(R.id.booksRecyclerView)
+        bookCount = findViewById(R.id.bookCounter)
+
 
         // --- 2. Remove direct database access to prevent crash ---
         // db = AppDatabase.getDatabase(this) // <-- DELETED
@@ -49,23 +51,16 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        // FIX: Use GridLayoutManager and specify 3 columns (spanCount).
         booksRecyclerView.layoutManager = GridLayoutManager(this, 3)
         booksRecyclerView.adapter = bookAdapter
 
 
-        // --- 4. THIS IS THE FIX: Observe the ViewModel for data ---
-        // This connects your UI to your data layer safely.
-        // The code inside the brackets runs on the main thread automatically
-        // when the data is ready.
         favouritesViewModel.savedBooks.observe(this) { books ->
-            // The 'books' variable is the List<Book> from your database.
-            // When we receive it, we give it to the adapter to display.
             this.fullBookList = books
             bookAdapter.setData(books)
+            updateBookCount(bookAdapter.itemCount)
         }
 
-        // --- 5. Set up button click listeners ---
         addBtn.setOnClickListener {
             val intent = Intent(this, AddBookActivity::class.java)
             startActivity(intent)
@@ -102,9 +97,15 @@ class MainActivity : AppCompatActivity() {
                 }
                 // Update the adapter with the new filtered list
                 bookAdapter.setData(filteredList)
+                updateBookCount(bookAdapter.itemCount)
                 return true
             }
         })
+
+    }
+
+    private fun updateBookCount(count: Int) {
+        bookCount.text = "Total books: $count"
 
     }
 }
