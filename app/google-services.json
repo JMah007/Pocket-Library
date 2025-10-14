@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1052778942391",
+    "project_id": "juba21",
+    "storage_bucket": "juba21.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052778942391:android:a3f9ef34f7b1d2e74ea232",
+        "android_client_info": {
+          "package_name": "com.example.pocketlibrary"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5zAl4vHLpb5rIH6vqolbWwlmdy7dyU8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

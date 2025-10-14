@@ -39,7 +39,16 @@ class MainActivity : AppCompatActivity() {
         // db = AppDatabase.getDatabase(this) // <-- DELETED
         // bookDAO = db.bookDao()              // <-- DELETED
         // --- 3. Setup the Adapter and RecyclerView ---
-        val bookAdapter = BookAdapter()
+        val bookAdapter = BookAdapter { book ->
+            // Handle click on book here
+            val intent = Intent(this, DetailedBookView::class.java).apply {
+                putExtra("id", book.id)
+
+            }
+            startActivity(intent)
+        }
+
+
         // FIX: Use GridLayoutManager and specify 3 columns (spanCount).
         booksRecyclerView.layoutManager = GridLayoutManager(this, 3)
         booksRecyclerView.adapter = bookAdapter

@@ -6,6 +6,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -14,7 +15,10 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.pocketlibrary.databinding.ActivityAddBookBinding
+import com.google.firebase.Firebase
+import com.google.firebase.database.database
 import kotlinx.coroutines.launch
+import kotlin.getValue
 
 class AddBookActivity : AppCompatActivity() {
     lateinit var bookCoverInput: ImageView
@@ -25,10 +29,13 @@ class AddBookActivity : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var bookDAO: BookDAO
 
+    private val favouritesViewModel: FavouritesViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_add_book)
+
 
         titleInput = findViewById(R.id.title_text_input_layout)
         authorInput = findViewById(R.id.author_text_input_layout)
@@ -46,12 +53,11 @@ class AddBookActivity : AppCompatActivity() {
             if (title.isEmpty() || author.isEmpty() || year.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             } else {
-                val book = Book(title = title, author = author, year = year, addedManually = true)
-                lifecycleScope.launch {
-                    db.bookDao().insert(book)
+                val book = Book(id = " ", title = title, author = author, year = year, addedManually = true)
+                favouritesViewModel.addBook(book)
                     Toast.makeText(this@AddBookActivity, "Book saved", Toast.LENGTH_SHORT).show()
                     finish()
-                }
+
             }
 
             // Need to also add implmentation that will add it to firebase
