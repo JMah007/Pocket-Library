@@ -1,28 +1,84 @@
 package com.example.pocketlibrary
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import java.io.IOException
 
-
-data class UiState(
-    val query: String = "",
+// This data class holds the clean, UI-friendly book data
+data class Books(
+    val title: String,
+    val author: String,
+    val publishYear: Int,
+    val coverUrl: String?
 )
 
+// This data class holds the entire state for the search screen
+data class BooksSearchUiState(
+    val query: String = "",
+    val loading: Boolean = false,
+    val error: String? = null,
+    val results: List<Books> = emptyList()
+)
 
-class BooksSearchViewModel(application: Application) : AndroidViewModel(application) {
+class BooksSearchViewModel : ViewModel() {
+    private val _state = MutableStateFlow(BooksSearchUiState())
+    val state = _state.asStateFlow()
 
-    // Can create the DAO instance directly inside the ViewModel because of "AndroidViewModel" and "application" context
-    private val bookDao = AppDatabase.getDatabase(application).bookDao()
+    private var searchJob: Job? = null
 
-    private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state
+    fun updateQuery(newQuery: String) {
+        // Using direct assignment for state update
+        _state.value = _state.value.copy(query = newQuery)
+        // Debounce: cancel the previous job and start a new one after a delay.
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(500L) // A 500ms delay is good for typing.
+            searchBooks()
+        }
+    }
 
-    // Rest of the view model code can be copied from workshop
+    fun searchBooks() {
+        val query = _state.value.query.trim()
+        if (query.isBlank()) {
+            _state.value = _state.value.copy(results = emptyList(), error = null, loading = false)
+            return
+        }
 
+        viewModelScope.launch {
+            // Set loading state
+            _state.value = _state.value.copy(loading = true, error = null)
+            try {
+                // Call the OpenLibrary API
+                val response = Network.api.searchBooks(query = query)
 
-    // implmeent function that will on the click of a book it will save it to room model via dao insert function
+                // Map the raw network results ('Doc') to UI-friendly 'Book' objects.
+                val books = response.docs.mapNotNull { doc ->
+                    if (doc.title == null) return@mapNotNull null
 
+                    Books(
+                        title = doc.title,
+                        author = doc.authorName?.firstOrNull() ?: "Unknown Author",
+                        publishYear = doc.firstPublishYear ?: 0,
+                        coverUrl = doc.coverId?.let {
+                            "https://covers.openlibrary.org/b/id/$it-S.jpg"
+                        }
+                    )
+                }
 
+                // Update the state with the final list of books
+                _state.value = _state.value.copy(results = books, loading = false)
+
+            } catch (t: Throwable) { // Using a single, general catch block
+                _state.value = _state.value.copy(
+                    loading = false,
+                    error = t.message ?: "An unexpected error occurred."
+                )
+            }
+        }
+    }
 }

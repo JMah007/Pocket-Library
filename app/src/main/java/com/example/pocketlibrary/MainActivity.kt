@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.semantics.text
 
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
@@ -71,13 +70,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-
-
         searchQuery.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
                 // dont implement
                 return false
-
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
