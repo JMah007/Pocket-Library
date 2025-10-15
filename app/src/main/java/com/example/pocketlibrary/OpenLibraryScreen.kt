@@ -1,93 +1,121 @@
 package com.example.pocketlibrary
 
+import android.content.Intent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+
+
 
 @Composable
-fun BookSearchScreen(vm: BooksSearchViewModel = viewModel()) {
-    val results by vm.results.collectAsState()
-    var query by remember { mutableStateOf("") }
-    val coroutineScope = rememberCoroutineScope()
-    var searchJob by remember { mutableStateOf<Job?>(null) }
+fun OpenLibraryScreen(vm: BooksSearchViewModel = viewModel()) {
+    val state by vm.state.collectAsState()
 
     Column(
-        modifier = Modifier
+        Modifier
             .fillMaxSize()
+
             .padding(16.dp)
     ) {
         OutlinedTextField(
-            value = query,
-            onValueChange = { newQuery ->
-                query = newQuery
-
-                searchJob = coroutineScope.launch {
-                    if (query.isNotBlank()) {
-                        vm.search(query)
-                    } else {
-                        vm.clearResults()
-                    }
-                }
-            },
-            label = { Text("Search by title or author") },
+            value = state.query,
+            onValueChange = vm::updateQuery,
+            label = { Text("Search Open Library") },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            // 1. CORRECTED: The function is searchBooks(), not search().
+            keyboardActions = KeyboardActions(
+                onSearch = { vm.searchBooks() })
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // --- Results List ---
-        if (results.isEmpty()) {
-            Text("No results yet", style = MaterialTheme.typography.bodyMedium)
-        } else {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxSize()
-            ) {
-                items(results) { book ->
-                    BookResultItem(book)
-                    Divider()
+        Box(Modifier.fillMaxSize()) {
+            when {
+                state.loading -> {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                }
+
+                state.error != null -> {
+                    Text(
+                        text = state.error ?: "Error",
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+
+                // Show a helpful message when the screen first loads
+                state.results.isEmpty() && state.query.isBlank() -> {
+                    Text("Search for a book to begin", modifier = Modifier.align(Alignment.Center))
+                }
+
+                state.results.isEmpty() && state.query.isNotEmpty() && !state.loading -> {
+                    Text("No results found", modifier = Modifier.align(Alignment.Center))
+                }
+
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(1),
+                        verticalArrangement = Arrangement.spacedBy(8.dp) // Add spacing between items
+                    ) {
+                        items(state.results) { book ->
+                            Card(Modifier
+                                .fillMaxWidth()
+                                .clickable {
+
+                                }) {
+
+                                Row(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // 2. UNCOMMENTED: The AsyncImage is now active.
+                                    AsyncImage(
+                                        model = book.coverUrl,
+                                        contentDescription = "Cover for ${book.title}",
+                                        contentScale = ContentScale.Crop, // Crop is often better for uniform size
+                                        modifier = Modifier
+                                            .width(80.dp)
+                                            .height(120.dp)
+                                    )
+
+                                    Spacer(Modifier.width(16.dp))
+
+                                    Column {
+                                        Text(
+                                            text = book.title,
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "by ${book.author}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(
+                                            text = "Published ${book.publishYear}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                    }
+
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 }
-
-@Composable
-fun BookResultItem(book: Book) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)
-    ) {
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(book.coverUrl)
-                .crossfade(true)
-                .build(),
-            contentDescription = "Book Cover",
-            modifier = Modifier.size(80.dp)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column {
-            Text(text = book.title, style = MaterialTheme.typography.titleMedium)
-            Text(text = "Author: ${book.author}", style = MaterialTheme.typography.bodyMedium)
-            Text(text = "Year: ${book.year}", style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-
-

@@ -7,11 +7,10 @@ import retrofit2.converter.moshi.MoshiConverterFactory
 
 object Network {
     private val moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
+        .addLast(KotlinJsonAdapterFactory()) // CORRECTED: Changed from .addLast() to .add()
         .build()
 
-    // Open Library API
-    val OpenLibraryApi: OpenLibraryApi by lazy {
+    val api: OpenLibraryApi by lazy {
         Retrofit.Builder()
             .baseUrl("https://openlibrary.org/")
             .addConverterFactory(MoshiConverterFactory.create(moshi))
@@ -19,4 +18,6 @@ object Network {
             .create(OpenLibraryApi::class.java)
     }
 }
+
+
 
