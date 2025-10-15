@@ -9,7 +9,9 @@ import androidx.compose.ui.semantics.error
 import androidx.recyclerview.widget.RecyclerView
 
 
-class BookAdapter : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
+class BookAdapter (
+    private val onClickBook: (Book) -> Unit,
+) : RecyclerView.Adapter<BookAdapter.BookViewHolder>(){
 
     private var books: List<Book> = emptyList()
 
@@ -39,6 +41,10 @@ class BookAdapter : RecyclerView.Adapter<BookAdapter.BookViewHolder>() {
         // Set the text for title and author
         holder.title.text = book.title
         holder.author.text = book.author
+
+        holder.itemView.setOnClickListener {
+            onClickBook(book)
+        }
 
 
     }
