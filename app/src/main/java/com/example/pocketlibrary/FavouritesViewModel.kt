@@ -2,21 +2,22 @@ package com.example.pocketlibrary
 
 import android.app.Application
 import android.util.Log
-import android.widget.Toast
+import androidx.compose.ui.input.key.key
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-
+import com.google.firebase.database.database
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-private val database = FirebaseDatabase.getInstance("https://juba21-default-rtdb.asia-southeast1.firebasedatabase.app")
+
+private val database = Firebase.database("https://juba21-default-rtdb.asia-southeast1.firebasedatabase.app")
     .getReference("books")
 
 class FavouritesViewModel(application: Application) : AndroidViewModel(application) {
@@ -24,12 +25,12 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
     private val bookDao = AppDatabase.getDatabase(application).bookDao()
 
     private val _savedBooks = MutableLiveData<List<Book>>()
-
     val savedBooks: LiveData<List<Book>> = _savedBooks
 
     init {
         // Explicitly tell Firebase to connect and start syncing its offline queue.
-        FirebaseDatabase.getInstance().goOnline()
+        // This might not be strictly necessary with a persistent listener, but it doesn't hurt.
+        FirebaseDatabase.getInstance("https://juba21-default-rtdb.asia-southeast1.firebasedatabase.app").goOnline()
 
         // Start observing the local Room database for instant UI updates.
         viewModelScope.launch {
@@ -44,14 +45,21 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
                 viewModelScope.launch {
                     val firebaseBooks = mutableListOf<Book>()
                     for (snapshot in dataSnapshot.children) {
-                        val book = snapshot.getValue(Book::class.java)
-                        if (book != null) {
-                            firebaseBooks.add(book) // Collects all books that are in firebase
+                        // Using try-catch to prevent crashes from malformed data in Firebase
+                        try {
+                            val book = snapshot.getValue(Book::class.java)
+                            if (book != null) {
+                                firebaseBooks.add(book)
+                            }
+                        } catch (e: Exception) {
+                            Log.e("FirebaseSync", "Error parsing book data: ${snapshot.key}", e)
                         }
                     }
 
-                    // Adds all books in firebase local room to display from
-                    bookDao.insertAll(firebaseBooks)
+                    // Replace local data with the fresh data from Firebase
+                    if (firebaseBooks.isNotEmpty()) {
+                        bookDao.insertAll(firebaseBooks)
+                    }
                 }
             }
 
@@ -64,8 +72,7 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
         database.addValueEventListener(firebaseListener)
     }
 
-
-
+    // The rest of your ViewModel is well-structured and looks good!
     fun deleteBook(id: String) {
         viewModelScope.launch {
             bookDao.deleteBookById(id)
@@ -73,11 +80,14 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    suspend fun getBookByDetails(title: String, author: String): Book? {
+        return bookDao.getBookByDetails(title, author)
+    }
+
 
     fun getBookById(id: String): LiveData<Book?> {
         return bookDao.getBookByIdLive(id)
     }
-
 
     fun updateBook(book: Book){
         viewModelScope.launch {
@@ -88,22 +98,14 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
 
     fun addBook(book: Book) {
         viewModelScope.launch {
-            // 2. Ask Firebase to generate a new, unique ID for us first.
             val newBookRef = database.push()
-            val newId = newBookRef.key // This is the unique ID string from Firebase
+            val newId = newBookRef.key
 
             if (newId != null) {
-                // 3. Create a copy of the book with the new Firebase ID.
                 val bookWithSyncedId = book.copy(id = newId)
-
-                // 4. Save this complete object to Firebase.
                 newBookRef.setValue(bookWithSyncedId)
-
-                // 5. Save the EXACT SAME object (with the synced ID) to Room.
-                bookDao.insert(bookWithSyncedId)
+                // bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
             }
         }
     }
-
-
 }

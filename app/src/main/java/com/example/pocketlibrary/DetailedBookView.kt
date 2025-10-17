@@ -8,11 +8,12 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.telephony.SmsManager
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import coil.load
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -32,6 +33,7 @@ class DetailedBookView : AppCompatActivity() {
     private lateinit var titleView: TextView
     private lateinit var authorView: TextView
     private lateinit var yearView: TextView
+    private lateinit var coverView: ImageView
     private lateinit var editBtn: Button
     private lateinit var shareBtn: Button
     private lateinit var deleteBtn: Button
@@ -45,6 +47,7 @@ class DetailedBookView : AppCompatActivity() {
         titleView = findViewById<TextView>(R.id.title_text_input_layout)
         authorView = findViewById<TextView>(R.id.author_text_input_layout)
         yearView = findViewById<TextView>(R.id.year_text_input_layout)
+        coverView = findViewById<ImageView>(R.id.book_cover_imageview)
         editBtn = findViewById<Button>(R.id.saveBtn)
         deleteBtn = findViewById<Button>(R.id.DeleteBtn)
         shareBtn = findViewById(R.id.shareBtn)
@@ -55,7 +58,12 @@ class DetailedBookView : AppCompatActivity() {
 
                 titleView.text = book?.title
                 authorView.text = book?.author
-                yearView.text = book?.year.toString()
+                yearView.text = "Published: ${book?.year}"
+                coverView.load(book?.coverUrl) {
+                    placeholder(R.drawable.ic_launcher_background) // Optional: Show a default image while loading
+                    error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
+                }
+
 
                 // Restructure to only show this if the book is added manually by checking the boolean status
                 editBtn.setOnClickListener {

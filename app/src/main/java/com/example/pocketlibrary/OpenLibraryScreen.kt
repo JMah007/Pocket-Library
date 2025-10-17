@@ -16,6 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
 
 
 
@@ -26,7 +27,7 @@ fun OpenLibraryScreen(vm: BooksSearchViewModel = viewModel()) {
     Column(
         Modifier
             .fillMaxSize()
-
+            .background(MaterialTheme.colorScheme.background)
             .padding(16.dp)
     ) {
         OutlinedTextField(
@@ -71,10 +72,16 @@ fun OpenLibraryScreen(vm: BooksSearchViewModel = viewModel()) {
                         verticalArrangement = Arrangement.spacedBy(8.dp) // Add spacing between items
                     ) {
                         items(state.results) { book ->
+                            val context = LocalContext.current
                             Card(Modifier
                                 .fillMaxWidth()
                                 .clickable {
-
+                                    val intent = Intent(context, DetailedBookViewOnline::class.java)
+                                    intent.putExtra("title", book.title)
+                                    intent.putExtra("author", book.author)
+                                    intent.putExtra("coverUrl", book.coverUrl)
+                                    intent.putExtra("publishYear", book.publishYear.toString())
+                                    context.startActivity(intent)
                                 }) {
 
                                 Row(
