@@ -70,10 +70,20 @@
         app:layout_constraintTop_toBottomOf="@id/book_cover_imageview" />
 
     <Button
-        android:id="@+id/DeleteBtn"
+        android:id="@+id/shareBtn"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="84dp"
+        android:text="Share"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/book_cover_imageview" />
+
+    <Button
+        android:id="@+id/DeleteBtn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="144dp"
         android:text="Delete"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
