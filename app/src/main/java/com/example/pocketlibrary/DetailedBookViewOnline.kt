@@ -46,10 +46,10 @@ class DetailedBookViewOnline : AppCompatActivity() {
         titleView.setText(title) // Use .setText() for EditTexts
         authorView.setText(author)
         yearView.setText(year)
-//        coverView.load(coverUrl) { // Load the image from URL using Coil
-//            placeholder(R.drawable.ic_launcher_background) // Optional
-//            error(R.drawable.ic_launcher_foreground)       // Optional
-//        }
+        coverView.load(coverUrl) {
+            placeholder(R.drawable.ic_launcher_background)
+            error(R.drawable.ic_launcher_foreground)
+        }
 
         // 3. FIX: Check initial book status in a coroutine to set button text
         lifecycleScope.launch {
@@ -77,6 +77,7 @@ class DetailedBookViewOnline : AppCompatActivity() {
                         title = title ?: "No title",
                         author = author ?: "No author",
                         year = year ?: "NA",
+                        coverUrl = coverUrl ?: "",
                         addedManually = false
                     )
                     favouritesViewModel.addBook(newBook)

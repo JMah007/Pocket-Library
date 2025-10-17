@@ -80,7 +80,7 @@ fun OpenLibraryScreen(vm: BooksSearchViewModel = viewModel()) {
                                     intent.putExtra("title", book.title)
                                     intent.putExtra("author", book.author)
                                     intent.putExtra("coverUrl", book.coverUrl)
-                                    intent.putExtra("publishYear", book.publishYear)
+                                    intent.putExtra("publishYear", book.publishYear.toString())
                                     context.startActivity(intent)
                                 }) {
 

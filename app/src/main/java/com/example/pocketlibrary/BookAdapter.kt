@@ -5,6 +5,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+
+import coil.load
 import androidx.compose.ui.semantics.error
 import androidx.recyclerview.widget.RecyclerView
 
@@ -27,6 +29,7 @@ class BookAdapter (
         // Make sure the IDs in your R.id.____ match your item_book.xml file exactly
         val title: TextView = view.findViewById(R.id.bookTitle)
         val author: TextView = view.findViewById(R.id.bookAuthor)
+        val cover: ImageView = view.findViewById(R.id.book_cover_image)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookViewHolder {
@@ -41,6 +44,10 @@ class BookAdapter (
         // Set the text for title and author
         holder.title.text = book.title
         holder.author.text = book.author
+        holder.cover.load(book.coverUrl) {
+            placeholder(R.drawable.ic_launcher_background) // Optional: Show a default image while loading
+            error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
+        }
 
         holder.itemView.setOnClickListener {
             onClickBook(book)

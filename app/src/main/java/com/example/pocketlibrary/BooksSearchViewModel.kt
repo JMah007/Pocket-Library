@@ -65,7 +65,7 @@ class BooksSearchViewModel : ViewModel() {
                         author = doc.authorName?.firstOrNull() ?: "Unknown Author",
                         publishYear = doc.firstPublishYear ?: 0,
                         coverUrl = doc.coverId?.let {
-                            "https://covers.openlibrary.org/b/id/$it-S.jpg"
+                            "https://covers.openlibrary.org/b/id/$it-L.jpg"
                         }
                     )
                 }

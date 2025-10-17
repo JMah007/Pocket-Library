@@ -10,6 +10,7 @@ data class Book(
     @ColumnInfo(name = "title") val title: String = "",
     @ColumnInfo(name = "author") val author: String = "",
     @ColumnInfo(name = "year") val year: String = "",
+    @ColumnInfo(name = "coverUrl") val coverUrl: String = "",
     @ColumnInfo(name = "addedManually") var addedManually: Boolean = false
 
 )
