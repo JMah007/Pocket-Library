@@ -2,6 +2,8 @@ package com.example.pocketlibrary
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.SearchView
 import android.widget.TextView
@@ -18,7 +20,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var searchQuery: SearchView
     private lateinit var booksRecyclerView: RecyclerView
     private lateinit var bookCount: TextView
-
     private var fullBookList: List<Book> = emptyList()
 
     // This is the only instance of the ViewModel you need.
@@ -41,14 +42,20 @@ class MainActivity : AppCompatActivity() {
         // bookDAO = db.bookDao()              // <-- DELETED
         // --- 3. Setup the Adapter and RecyclerView ---
         val bookAdapter = BookAdapter { book ->
-            // Handle click on book here
-            val intent = Intent(this, DetailedBookView::class.java).apply {
-                putExtra("id", book.id)
-
+            if (isTabletLayout()) {
+                // Show details in the side pane (tablet)
+                val fragment = DetailedBookViewFragment.newInstance(book.id)
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.detailContainer, fragment)
+                    .commit()
+            } else {
+                // Open activity (phone)
+                val intent = Intent(this, DetailedBookView::class.java).apply {
+                    putExtra("id", book.id)
+                }
+                startActivity(intent)
             }
-            startActivity(intent)
         }
-
 
         booksRecyclerView.layoutManager = GridLayoutManager(this, 3)
         booksRecyclerView.adapter = bookAdapter
@@ -98,6 +105,10 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
+    }
+
+    private fun isTabletLayout(): Boolean {
+        return findViewById<View?>(R.id.detailContainer) != null
     }
 
     private fun updateBookCount(count: Int) {
