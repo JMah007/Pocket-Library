@@ -7,117 +7,104 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.telephony.SmsManager
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import coil.load
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import coil.load
 
-import androidx.lifecycle.observe
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import com.example.pocketlibrary.databinding.ActivityDetailedBookViewBinding
-
-class DetailedBookView : AppCompatActivity() {
+class DetailedBookViewFragment : Fragment() {
 
     private val PICK_CONTACT_REQUEST = 1001
     private val PERMISSIONS_REQUEST_CODE = 2001
 
-    private val favouritesViewModel: FavouritesViewModel by viewModels()
+    private val favouritesViewModel: FavouritesViewModel by viewModels(ownerProducer = { requireActivity() })
+
     private lateinit var titleView: TextView
     private lateinit var authorView: TextView
     private lateinit var yearView: TextView
     private lateinit var coverView: ImageView
     private lateinit var editBtn: Button
     private lateinit var shareBtn: Button
-    private lateinit var backBtn: ImageButton
     private lateinit var deleteBtn: Button
 
     private var bookToShare: Book? = null
+    private var currentBookId: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_detailed_book_view)
+        currentBookId = arguments?.getString("id")
+    }
 
-        titleView = findViewById<TextView>(R.id.title_text_input_layout)
-        authorView = findViewById<TextView>(R.id.author_text_input_layout)
-        yearView = findViewById<TextView>(R.id.year_text_input_layout)
-        coverView = findViewById<ImageView>(R.id.book_cover_imageview)
-        editBtn = findViewById<Button>(R.id.saveBtn)
-        deleteBtn = findViewById<Button>(R.id.DeleteBtn)
-        shareBtn = findViewById(R.id.shareBtn)
-        backBtn = findViewById<ImageButton>(R.id.backBtn)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        // Using the same layout as the Activity
+        return inflater.inflate(R.layout.activity_detailed_book_view, container, false)
+    }
 
-        val bookId = intent.getStringExtra("id")
-        if (!bookId.isNullOrEmpty()) {
-            favouritesViewModel.getBookById(bookId).observe(this) { book ->
-                book?.let { currentBook ->
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        titleView = view.findViewById(R.id.title_text_input_layout)
+        authorView = view.findViewById(R.id.author_text_input_layout)
+        yearView = view.findViewById(R.id.year_text_input_layout)
+        coverView = view.findViewById(R.id.book_cover_imageview)
+        editBtn = view.findViewById(R.id.saveBtn)
+        deleteBtn = view.findViewById(R.id.DeleteBtn)
+        shareBtn = view.findViewById(R.id.shareBtn)
+
+        currentBookId?.let { bookId ->
+            favouritesViewModel.getBookById(bookId).observe(viewLifecycleOwner) { book ->
+                if (book != null) {
+
+                    bookToShare = book
                     titleView.text = book.title
                     authorView.text = book.author
-                    yearView.text = "Published: ${book?.year}"
+                    yearView.text = "Published: ${book.year}"
                     coverView.load(book.coverUrl) {
-                        placeholder(R.drawable.ic_launcher_background) // Optional: Show a default image while loading
-                        error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
+                        placeholder(R.drawable.ic_launcher_background)
+                        error(R.drawable.ic_launcher_foreground)
                     }
 
-                bookToShare = book
-                titleView.text = book?.title
-                authorView.text = book?.author
-                yearView.text = "Published: ${book?.year}"
-                coverView.load(book?.coverUrl) {
-                    placeholder(R.drawable.ic_launcher_background)
-                    error(R.drawable.ic_launcher_foreground)
-                    // Check the boolean value to control button visibility
-                    if (currentBook.addedManually) {
-                        editBtn.visibility = android.view.View.VISIBLE
-                    } else {
-                        // If the book was not added manually, hide the edit and delete buttons
-                        editBtn.visibility = android.view.View.GONE
+                    editBtn.setOnClickListener {
+                        val intent = Intent(requireContext(), EditBookActivity::class.java).apply {
+                            putExtra("id", book.id)
+                        }
+                        startActivity(intent)
                     }
-                }
 
-                // Restructure to only show this if the book is added manually by checking the boolean status
-                editBtn.setOnClickListener {
-                    val intent = Intent(this, EditBookActivity::class.java).apply {
-                        // Pass the most current data to the edit screen
-                        putExtra("id", book?.id)
+                    shareBtn.setOnClickListener {
+                        checkPermissionsAndPickContact()
                     }
-                    startActivity(intent)
-                }
 
-                shareBtn.setOnClickListener {
-                    checkPermissionsAndPickContact()
-                }
-
-                deleteBtn.setOnClickListener {
-                    favouritesViewModel.deleteBook(bookId)
-                    finish()
-                }
-
-                backBtn.setOnClickListener {
-                    finish()
+                    deleteBtn.setOnClickListener {
+                        favouritesViewModel.deleteBook(bookId)
+                        requireActivity().onBackPressedDispatcher.onBackPressed()
+                    }
                 }
             }
         }
     }
 
     private fun checkPermissionsAndPickContact() {
+        val context = requireContext()
         val hasReadContacts = ContextCompat.checkSelfPermission(
-            this,
+            context,
             Manifest.permission.READ_CONTACTS
         ) == PackageManager.PERMISSION_GRANTED
 
         val hasSendSms = ContextCompat.checkSelfPermission(
-            this,
+            context,
             Manifest.permission.SEND_SMS
         ) == PackageManager.PERMISSION_GRANTED
 
@@ -126,8 +113,7 @@ class DetailedBookView : AppCompatActivity() {
         if (!hasSendSms) permissionsToRequest.add(Manifest.permission.SEND_SMS)
 
         if (permissionsToRequest.isNotEmpty()) {
-            ActivityCompat.requestPermissions(
-                this,
+            requestPermissions(
                 permissionsToRequest.toTypedArray(),
                 PERMISSIONS_REQUEST_CODE
             )
@@ -147,7 +133,7 @@ class DetailedBookView : AppCompatActivity() {
             if (allGranted) {
                 pickContact()
             } else {
-                Toast.makeText(this, "Permissions required to share book", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Permissions required to share book", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -162,7 +148,7 @@ class DetailedBookView : AppCompatActivity() {
         if (requestCode == PICK_CONTACT_REQUEST && resultCode == Activity.RESULT_OK) {
             data?.data?.let { contactUri ->
                 val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                contentResolver.query(contactUri, projection, null, null, null)?.use { cursor ->
+                requireContext().contentResolver.query(contactUri, projection, null, null, null)?.use { cursor ->
                     if (cursor.moveToFirst()) {
                         val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
                         val phoneNumber = cursor.getString(numberIndex)
@@ -180,9 +166,20 @@ class DetailedBookView : AppCompatActivity() {
         try {
             val smsManager = SmsManager.getDefault()
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
-            Toast.makeText(this, "Book successfully shared via SMS!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Book successfully shared via SMS!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "Failed to send SMS: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "Failed to send SMS: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    companion object {
+        fun newInstance(bookId: String): DetailedBookViewFragment {
+            val fragment = DetailedBookViewFragment()
+            val args = Bundle().apply {
+                putString("id", bookId)
+            }
+            fragment.arguments = args
+            return fragment
         }
     }
 }

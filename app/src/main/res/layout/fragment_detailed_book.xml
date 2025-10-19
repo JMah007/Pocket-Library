@@ -7,18 +7,6 @@
     android:padding="16dp"
     tools:context=".AddBookActivity">
 
-    <ImageButton
-        android:id="@+id/backBtn"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:background="?attr/selectableItemBackgroundBorderless"
-        android:contentDescription="Back"
-        android:scaleType="centerInside"
-        android:src="@drawable/back"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/white" />
-
     <!-- 1. ImageView to display the book cover -->
     <!-- It's clickable to let the user pick an image from their gallery. -->
     <ImageView
@@ -29,7 +17,7 @@
         android:contentDescription="Book Cover Image"
         android:scaleType="centerCrop"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/backBtn"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 2. EditText for the book title -->
     <TextView
