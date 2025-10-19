@@ -3,7 +3,9 @@ package com.example.pocketlibrary
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -14,7 +16,14 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.semantics.text
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import coil.load
+import com.google.firebase.Firebase
+import com.google.firebase.storage.storage
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
+import kotlin.io.path.exists
 
 class EditBookActivity : AppCompatActivity() {
     // ... (your view declarations)
@@ -27,11 +36,13 @@ class EditBookActivity : AppCompatActivity() {
     lateinit var takePicBtn: Button
     private val favouritesViewModel: FavouritesViewModel by viewModels()
 
+    private var coverPublicUrl: String? = null
+
     private val takeThumbnail = registerForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview(),
         callback = { bitmap: Bitmap? ->
             if (bitmap != null) {
-                coverView.setImageBitmap(bitmap)
+                coverView.setImageBitmap(bitmap) // Sets image i edit page straight away for preview
                 // call method that uploads to firebase cloud
             } else {
                 Toast.makeText(this, "No image captured", Toast.LENGTH_SHORT).show()
@@ -92,12 +103,14 @@ class EditBookActivity : AppCompatActivity() {
             saveBtn.setOnClickListener {
                 // Make sure the book has loaded before trying to save
                 currentBook?.let { bookToUpdate ->
+
+                    val finalCoverUrl = coverPublicUrl ?: bookToUpdate.coverUrl
                     val updatedBook = Book(
                         id = bookToUpdate.id, // Use the non-nullable id
                         title = titleInput.text.toString(),
                         author = authorInput.text.toString(),
                         year = yearInput.text.toString(),
-                        coverUrl = bookToUpdate.coverUrl // Use the original URL from the loaded book
+                        coverUrl = finalCoverUrl // Use the original URL from the loaded book
                     )
 
                     favouritesViewModel.updateBook(updatedBook)
@@ -121,4 +134,50 @@ class EditBookActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun uploadImageToFirebaseStorage(bitmap: Bitmap) {
+        val localFileUri = saveBitmapToCache(bitmap)
+        if (localFileUri == null) {
+            Toast.makeText(this, "Failed to create local file", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Toast.makeText(this, "Uploading cover...", Toast.LENGTH_SHORT).show()
+        val storageRef = Firebase.storage.reference
+        // Create a unique path for the image
+        val imageRef = storageRef.child("covers/${System.currentTimeMillis()}.jpg")
+
+        imageRef.putFile(localFileUri)
+            .addOnSuccessListener {
+                // Image uploaded successfully, now get the download URL
+                imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                    coverPublicUrl = downloadUri.toString()
+                    Toast.makeText(this, "Upload complete!", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Upload failed: ${e.message}", Toast.LENGTH_LONG).show()
+                Log.e("FirebaseStorage", "Upload failed", e)
+            }
+    }
+
+    // --- NEW HELPER FUNCTION TO SAVE BITMAP LOCALLY ---
+    private fun saveBitmapToCache(bitmap: Bitmap): Uri? {
+        return try {
+            val imageDir = File(cacheDir, "images")
+            if (!imageDir.exists()) imageDir.mkdirs()
+
+            val imageFile = File(imageDir, "${System.currentTimeMillis()}.jpg")
+            val outputStream = FileOutputStream(imageFile)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            outputStream.close()
+
+            FileProvider.getUriForFile(this, "${applicationContext.packageName}.provider", imageFile)
+        } catch (e: IOException) {
+            Log.e("SaveBitmap", "Error saving bitmap to cache", e)
+            null
+        }
+    }
+
+
 }
