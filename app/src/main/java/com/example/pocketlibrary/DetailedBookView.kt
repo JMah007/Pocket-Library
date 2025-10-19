@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.telephony.SmsManager
 import android.widget.Button
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -18,13 +17,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-
-import androidx.lifecycle.observe
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import com.example.pocketlibrary.databinding.ActivityDetailedBookViewBinding
 
 class DetailedBookView : AppCompatActivity() {
 
@@ -38,9 +30,7 @@ class DetailedBookView : AppCompatActivity() {
     private lateinit var coverView: ImageView
     private lateinit var editBtn: Button
     private lateinit var shareBtn: Button
-    private lateinit var backBtn: ImageButton
     private lateinit var deleteBtn: Button
-
     private var bookToShare: Book? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,7 +45,6 @@ class DetailedBookView : AppCompatActivity() {
         editBtn = findViewById<Button>(R.id.saveBtn)
         deleteBtn = findViewById<Button>(R.id.DeleteBtn)
         shareBtn = findViewById(R.id.shareBtn)
-        backBtn = findViewById<ImageButton>(R.id.backBtn)
 
         val bookId = intent.getStringExtra("id")
         if (!bookId.isNullOrEmpty()) {
@@ -69,13 +58,6 @@ class DetailedBookView : AppCompatActivity() {
                         error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
                     }
 
-                bookToShare = book
-                titleView.text = book?.title
-                authorView.text = book?.author
-                yearView.text = "Published: ${book?.year}"
-                coverView.load(book?.coverUrl) {
-                    placeholder(R.drawable.ic_launcher_background)
-                    error(R.drawable.ic_launcher_foreground)
                     // Check the boolean value to control button visibility
                     if (currentBook.addedManually) {
                         editBtn.visibility = android.view.View.VISIBLE
@@ -100,10 +82,6 @@ class DetailedBookView : AppCompatActivity() {
 
                 deleteBtn.setOnClickListener {
                     favouritesViewModel.deleteBook(bookId)
-                    finish()
-                }
-
-                backBtn.setOnClickListener {
                     finish()
                 }
             }
@@ -180,7 +158,7 @@ class DetailedBookView : AppCompatActivity() {
         try {
             val smsManager = SmsManager.getDefault()
             smsManager.sendTextMessage(phoneNumber, null, message, null, null)
-            Toast.makeText(this, "Book successfully shared via SMS!", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Book shared via SMS!", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(this, "Failed to send SMS: ${e.message}", Toast.LENGTH_SHORT).show()
         }
