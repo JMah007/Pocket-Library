@@ -104,7 +104,7 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
             if (newId != null) {
                 val bookWithSyncedId = book.copy(id = newId)
                 newBookRef.setValue(bookWithSyncedId)
-                // bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
+                bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
             }
         }
     }
