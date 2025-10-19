@@ -45,7 +45,6 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
                 viewModelScope.launch {
                     val firebaseBooks = mutableListOf<Book>()
                     for (snapshot in dataSnapshot.children) {
-                        // Using try-catch to prevent crashes from malformed data in Firebase
                         try {
                             val book = snapshot.getValue(Book::class.java)
                             if (book != null) {
@@ -56,11 +55,11 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
                         }
                     }
 
-                    // Replace local data with the fresh data from Firebase
-                    if (firebaseBooks.isNotEmpty()) {
-                        bookDao.insertAll(firebaseBooks)
-                    }
+                    // room database is emptied and books is retrieved from firebase so its always synced across devices
+                    bookDao.deleteAll()
+                    bookDao.insertAll(firebaseBooks)
                 }
+
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
@@ -104,7 +103,7 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
             if (newId != null) {
                 val bookWithSyncedId = book.copy(id = newId)
                 newBookRef.setValue(bookWithSyncedId)
-                // bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
+                bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
             }
         }
     }
