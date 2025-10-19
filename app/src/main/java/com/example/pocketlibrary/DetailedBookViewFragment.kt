@@ -33,7 +33,7 @@ class DetailedBookViewFragment : Fragment() {
     private lateinit var deleteBtn: Button
 
     private var bookToShare: Book? = null
-    private var currentBookId: String? = null
+    private var currentBookId: String? = null //hello
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
