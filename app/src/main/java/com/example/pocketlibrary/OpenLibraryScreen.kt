@@ -118,7 +118,7 @@ fun OpenLibraryScreen(vm: BooksSearchViewModel = viewModel()) {
             }
         }
 
-        // Right pane: Tablet detail view
+        // Right pane
         if (tablet) {
             Box(
                 Modifier

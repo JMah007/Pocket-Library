@@ -15,13 +15,12 @@ import androidx.core.content.ContextCompat
 import kotlin.getValue
 
 class AddBookActivity : AppCompatActivity() {
-    lateinit var bookCoverInput: ImageView
-    lateinit var titleInput: EditText
-    lateinit var authorInput: EditText
-    lateinit var yearInput: EditText
-    lateinit var takePicBtn: Button
+    private lateinit var titleInput: EditText
+    private lateinit var authorInput: EditText
+    private lateinit var yearInput: EditText
+    private lateinit var takePicBtn: Button
     private lateinit var coverView: ImageView
-    lateinit var saveBtn: Button
+    private lateinit var saveBtn: Button
     private lateinit var db: AppDatabase
     private lateinit var bookDAO: BookDAO
 
@@ -32,6 +31,7 @@ class AddBookActivity : AppCompatActivity() {
         callback = { bitmap: Bitmap? ->
             if (bitmap != null) {
                 coverView.setImageBitmap(bitmap)
+                // Couldvde made a function that saves it to local device and firebase cloud
             } else {
                 Toast.makeText(this, "No image captured", Toast.LENGTH_SHORT).show()
             }
@@ -51,11 +51,10 @@ class AddBookActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_book)
 
-
         titleInput = findViewById(R.id.title_text_input_layout)
         authorInput = findViewById(R.id.author_text_input_layout)
         yearInput = findViewById(R.id.year_text_input_layout)
-        coverView = findViewById<ImageView>(R.id.book_cover_imageview)
+        coverView = findViewById(R.id.book_cover_imageview)
         saveBtn = findViewById(R.id.saveBtn)
         takePicBtn = findViewById(R.id.takePictureBtn)
 
@@ -66,7 +65,6 @@ class AddBookActivity : AppCompatActivity() {
             val title = titleInput.text.toString().trim()
             val author = authorInput.text.toString().trim()
             val year = yearInput.text.toString().trim()
-            // Need to make handler to handle taking cover photo and then saving it here (probs not url). The handler can be an onlcicklistner on teh imagecover location
 
             if (title.isEmpty() || author.isEmpty() || year.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
@@ -76,31 +74,25 @@ class AddBookActivity : AppCompatActivity() {
                     title = title,
                     author = author,
                     year = year,
-                    coverUrl = "",
+                    coverUrl = "", // Couldnt make a url for cover so default " "
                     addedManually = true
                 )
                 favouritesViewModel.addBook(book)
                 Toast.makeText(this@AddBookActivity, "Book saved", Toast.LENGTH_SHORT).show()
                 finish()
-
             }
-
         }
 
         takePicBtn.setOnClickListener {
-            // If already granted, skip the prompt
+            // If already gave camera permission then can skip
             if (ContextCompat.checkSelfPermission(
-                    this, Manifest.permission.CAMERA // FIX: Changed to CAMERA permission
+                    this, Manifest.permission.CAMERA
                 ) == PackageManager.PERMISSION_GRANTED
             ) {
-                // You already have permission, launch the camera
                 takeThumbnail.launch(null)
             } else {
-                // You don't have permission, request it.
-                // NOTE: 'requestPermission' is already configured to call 'takeThumbnail.launch(null)' if granted.
-                requestPermission.launch(Manifest.permission.CAMERA) // FIX: Changed to CAMERA permission
+                requestPermission.launch(Manifest.permission.CAMERA)
             }
         }
-
     }
 }

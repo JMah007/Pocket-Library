@@ -19,8 +19,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/white" />
 
-    <!-- 1. ImageView to display the book cover -->
-    <!-- It's clickable to let the user pick an image from their gallery. -->
     <ImageView
         android:id="@+id/book_cover_imageview"
         android:layout_width="120dp"
@@ -31,10 +29,8 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/backBtn"/>
 
-    <!-- 2. EditText for the book title -->
     <TextView
         android:id="@+id/title_text_input_layout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -43,12 +39,8 @@
         app:layout_constraintStart_toEndOf="@id/book_cover_imageview"
         app:layout_constraintTop_toTopOf="@id/book_cover_imageview"/>
 
-
-
-    <!-- 3. EditText for the book author -->
     <TextView
         android:id="@+id/author_text_input_layout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -57,11 +49,8 @@
         app:layout_constraintStart_toStartOf="@id/title_text_input_layout"
         app:layout_constraintTop_toBottomOf="@id/title_text_input_layout"/>
 
-
-
     <TextView
         android:id="@+id/year_text_input_layout"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -69,7 +58,6 @@
         app:layout_constraintEnd_toEndOf="@id/author_text_input_layout"
         app:layout_constraintStart_toStartOf="@id/author_text_input_layout"
         app:layout_constraintTop_toBottomOf="@id/author_text_input_layout"/>
-
 
     <Button
         android:id="@+id/saveBtn"

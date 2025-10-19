@@ -7,9 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.IOException
 
-// This data class holds the clean, UI-friendly book data
 data class Books(
     val title: String,
     val author: String,
@@ -17,7 +15,6 @@ data class Books(
     val coverUrl: String?
 )
 
-// This data class holds the entire state for the search screen
 data class BooksSearchUiState(
     val query: String = "",
     val loading: Boolean = false,
@@ -32,12 +29,10 @@ class BooksSearchViewModel : ViewModel() {
     private var searchJob: Job? = null
 
     fun updateQuery(newQuery: String) {
-        // Using direct assignment for state update
         _state.value = _state.value.copy(query = newQuery)
-        // Debounce: cancel the previous job and start a new one after a delay.
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
-            delay(500L) // A 500ms delay is good for typing.
+            delay(500L)
             searchBooks()
         }
     }
@@ -53,10 +48,8 @@ class BooksSearchViewModel : ViewModel() {
             // Set loading state
             _state.value = _state.value.copy(loading = true, error = null)
             try {
-                // Call the OpenLibrary API
                 val response = Network.api.searchBooks(query = query)
 
-                // Map the raw network results ('Doc') to UI-friendly 'Book' objects.
                 val books = response.docs.mapNotNull { doc ->
                     if (doc.title == null) return@mapNotNull null
 
@@ -70,10 +63,9 @@ class BooksSearchViewModel : ViewModel() {
                     )
                 }
 
-                // Update the state with the final list of books
                 _state.value = _state.value.copy(results = books, loading = false)
 
-            } catch (t: Throwable) { // Using a single, general catch block
+            } catch (t: Throwable) {
                 _state.value = _state.value.copy(
                     loading = false,
                     error = t.message ?: "An unexpected error occurred."

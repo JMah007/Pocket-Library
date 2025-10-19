@@ -54,7 +54,6 @@ dependencies {
     ksp("androidx.room:room-compiler:$room_version")
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
-
     implementation("io.coil-kt:coil-compose:2.6.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
     implementation(libs.androidx.core.ktx)

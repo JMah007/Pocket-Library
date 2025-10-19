@@ -12,19 +12,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.semantics.text
 import androidx.core.content.ContextCompat
 import coil.load
 
 class EditBookActivity : AppCompatActivity() {
-    // ... (your view declarations)
-    lateinit var bookCoverInput: ImageView
-    lateinit var titleInput: EditText
-    lateinit var authorInput: EditText
-    lateinit var yearInput: EditText
+    private lateinit var titleInput: EditText
+    private lateinit var authorInput: EditText
+    private lateinit var yearInput: EditText
     private lateinit var coverView: ImageView
-    lateinit var saveBtn: Button
-    lateinit var takePicBtn: Button
+    private lateinit var saveBtn: Button
+    private lateinit var takePicBtn: Button
+
     private val favouritesViewModel: FavouritesViewModel by viewModels()
 
     private val takeThumbnail = registerForActivityResult(
@@ -32,7 +30,7 @@ class EditBookActivity : AppCompatActivity() {
         callback = { bitmap: Bitmap? ->
             if (bitmap != null) {
                 coverView.setImageBitmap(bitmap)
-                // call method that uploads to firebase cloud
+                // Couldvde made a function that saves it to local device and firebase cloud
             } else {
                 Toast.makeText(this, "No image captured", Toast.LENGTH_SHORT).show()
             }
@@ -53,7 +51,6 @@ class EditBookActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_add_book)
 
-        // ... (your findViewById calls)
         titleInput = findViewById(R.id.title_text_input_layout)
         authorInput = findViewById(R.id.author_text_input_layout)
         coverView = findViewById<ImageView>(R.id.book_cover_imageview)
@@ -61,20 +58,13 @@ class EditBookActivity : AppCompatActivity() {
         saveBtn = findViewById(R.id.saveBtn)
         takePicBtn = findViewById(R.id.takePictureBtn)
 
-
-
         val bookId = intent.getStringExtra("id")
         if (!bookId.isNullOrEmpty()) {
-            // 1. Declare a variable to hold the current book.
-            //    It's nullable because it will be null until the observer provides it.
             var currentBook: Book? = null
 
-            // 2. The observer fetches the book and populates the 'currentBook' variable.
             favouritesViewModel.getBookById(bookId).observe(this) { book ->
-                // Assign the fetched book to our higher-scoped variable
                 currentBook = book
 
-                // Now update the UI (this part was already correct)
                 titleInput.setText(book?.title)
                 authorInput.setText(book?.author)
                 yearInput.setText(book?.year)
@@ -84,20 +74,14 @@ class EditBookActivity : AppCompatActivity() {
                 }
             }
 
-
-            // handler for if user clicks button to take cover photo
-            // ...
-
-            // 3. The click listener can now access 'currentBook' because it's in the same scope.
             saveBtn.setOnClickListener {
-                // Make sure the book has loaded before trying to save
                 currentBook?.let { bookToUpdate ->
                     val updatedBook = Book(
-                        id = bookToUpdate.id, // Use the non-nullable id
+                        id = bookToUpdate.id,
                         title = titleInput.text.toString(),
                         author = authorInput.text.toString(),
                         year = yearInput.text.toString(),
-                        coverUrl = bookToUpdate.coverUrl // Use the original URL from the loaded book
+                        coverUrl = bookToUpdate.coverUrl
                     )
 
                     favouritesViewModel.updateBook(updatedBook)
@@ -108,15 +92,12 @@ class EditBookActivity : AppCompatActivity() {
             takePicBtn.setOnClickListener {
                 // If already granted, skip the prompt
                 if (ContextCompat.checkSelfPermission(
-                        this, Manifest.permission.CAMERA // FIX: Changed to CAMERA permission
+                        this, Manifest.permission.CAMERA
                     ) == PackageManager.PERMISSION_GRANTED
                 ) {
-                    // You already have permission, launch the camera
                     takeThumbnail.launch(null)
                 } else {
-                    // You don't have permission, request it.
-                    // NOTE: 'requestPermission' is already configured to call 'takeThumbnail.launch(null)' if granted.
-                    requestPermission.launch(Manifest.permission.CAMERA) // FIX: Changed to CAMERA permission
+                    requestPermission.launch(Manifest.permission.CAMERA)
                 }
             }
         }

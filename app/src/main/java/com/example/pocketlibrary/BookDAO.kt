@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface BookDAO {
 
-
     @Insert
     suspend fun insert(book: Book)
 
@@ -38,7 +37,6 @@ interface BookDAO {
     @Query("SELECT * FROM books")
     fun getAllBooksFlow(): Flow<List<Book>>
 
-
     @Query("SELECT * FROM books WHERE title LIKE :title")
     suspend fun getBooksByTitle(title: String): List<Book>
 
@@ -47,14 +45,9 @@ interface BookDAO {
 
 
     @Query("SELECT * FROM books WHERE id = :id")
-    suspend fun getBookById(id: String): Book? // Returns a nullable Book
+    suspend fun getBookById(id: String): Book?
 
 
     @Query("SELECT * FROM books WHERE id = :id")
     fun getBookByIdLive(id: String): LiveData<Book?>
-
-
-
-
-
 }

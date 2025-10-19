@@ -14,7 +14,6 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -48,7 +47,6 @@ class DetailedBookViewFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Using the same layout as the Activity
         return inflater.inflate(R.layout.activity_detailed_book_view, container, false)
     }
 
@@ -121,6 +119,8 @@ class DetailedBookViewFragment : Fragment() {
             pickContact()
         }
     }
+
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,

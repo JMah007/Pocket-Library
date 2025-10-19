@@ -2,7 +2,6 @@ package com.example.pocketlibrary
 
 import android.app.Application
 import android.util.Log
-import androidx.compose.ui.input.key.key
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -27,20 +26,19 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
     private val _savedBooks = MutableLiveData<List<Book>>()
     val savedBooks: LiveData<List<Book>> = _savedBooks
 
-    init {
+    init { // on startup
         // Explicitly tell Firebase to connect and start syncing its offline queue.
-        // This might not be strictly necessary with a persistent listener, but it doesn't hurt.
         FirebaseDatabase.getInstance("https://juba21-default-rtdb.asia-southeast1.firebasedatabase.app").goOnline()
 
-        // Start observing the local Room database for instant UI updates.
+        // Start observing the local Room database for instant changes
         viewModelScope.launch {
             bookDao.getAllBooksFlow().collectLatest { bookList ->
                 _savedBooks.postValue(bookList)
             }
         }
 
-        // Create the persistent listener that keeps Room in sync with Firebase.
-        val firebaseListener = object : ValueEventListener {
+        // Create listener that keeps Room in sync with Firebase.
+        val firebaseListener = object : ValueEventListener { // This retrieves books from firebase
             override fun onDataChange(dataSnapshot: DataSnapshot) {
                 viewModelScope.launch {
                     val firebaseBooks = mutableListOf<Book>()
@@ -67,11 +65,9 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
             }
         }
 
-        // Attach the listener to your database reference.
         database.addValueEventListener(firebaseListener)
     }
 
-    // The rest of your ViewModel is well-structured and looks good!
     fun deleteBook(id: String) {
         viewModelScope.launch {
             bookDao.deleteBookById(id)
@@ -88,12 +84,14 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
         return bookDao.getBookByIdLive(id)
     }
 
+
     fun updateBook(book: Book){
         viewModelScope.launch {
             bookDao.update(book)
             database.child(book.id).setValue(book)
         }
     }
+
 
     fun addBook(book: Book) {
         viewModelScope.launch {
@@ -103,7 +101,7 @@ class FavouritesViewModel(application: Application) : AndroidViewModel(applicati
             if (newId != null) {
                 val bookWithSyncedId = book.copy(id = newId)
                 newBookRef.setValue(bookWithSyncedId)
-                bookDao.insert(bookWithSyncedId) // This is handled by the ValueEventListener
+                bookDao.insert(bookWithSyncedId)
             }
         }
     }

@@ -8,7 +8,6 @@
     android:layout_height="match_parent"
     tools:context=".SearchActivity">
 
-    <!--Search input field-->
     <SearchView
         android:id="@+id/onlineSearchView"
         android:layout_width="0dp"
@@ -21,7 +20,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         />
 
-    <!--RecyclerView to show API search results-->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/searchResultsRecyclerView"
         android:layout_width="0dp"
@@ -32,5 +30,4 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         />
-
 </androidx.constraintlayout.widget.ConstraintLayout>
