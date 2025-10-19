@@ -1,24 +1,17 @@
 package com.example.pocketlibrary
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.navigateUp
-import androidx.navigation.ui.setupActionBarWithNavController
-import coil.load
-import com.example.pocketlibrary.databinding.ActivityAddBookBinding
-import com.google.firebase.Firebase
-import com.google.firebase.database.database
-import kotlinx.coroutines.launch
+import androidx.core.content.ContextCompat
 import kotlin.getValue
 
 class AddBookActivity : AppCompatActivity() {
@@ -26,12 +19,33 @@ class AddBookActivity : AppCompatActivity() {
     lateinit var titleInput: EditText
     lateinit var authorInput: EditText
     lateinit var yearInput: EditText
+    lateinit var takePicBtn: Button
     private lateinit var coverView: ImageView
     lateinit var saveBtn: Button
     private lateinit var db: AppDatabase
     private lateinit var bookDAO: BookDAO
 
     private val favouritesViewModel: FavouritesViewModel by viewModels()
+
+    private val takeThumbnail = registerForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        callback = { bitmap: Bitmap? ->
+            if (bitmap != null) {
+                coverView.setImageBitmap(bitmap)
+            } else {
+                Toast.makeText(this, "No image captured", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
+    private val requestPermission = registerForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        callback = { granted ->
+            if (granted) takeThumbnail.launch(null)
+            else Toast.makeText(this, "Permission denied",
+                Toast.LENGTH_SHORT).show()
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +57,7 @@ class AddBookActivity : AppCompatActivity() {
         yearInput = findViewById(R.id.year_text_input_layout)
         coverView = findViewById<ImageView>(R.id.book_cover_imageview)
         saveBtn = findViewById(R.id.saveBtn)
+        takePicBtn = findViewById<Button>(R.id.takePictureBtn)
 
         db = AppDatabase.getDatabase(this)
         bookDAO = db.bookDao()
@@ -56,13 +71,36 @@ class AddBookActivity : AppCompatActivity() {
             if (title.isEmpty() || author.isEmpty() || year.isEmpty()) {
                 Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
             } else {
-                val book = Book(id = " ", title = title, author = author, year = year, coverUrl = "", addedManually = true)
+                val book = Book(
+                    id = " ",
+                    title = title,
+                    author = author,
+                    year = year,
+                    coverUrl = "",
+                    addedManually = true
+                )
                 favouritesViewModel.addBook(book)
-                    Toast.makeText(this@AddBookActivity, "Book saved", Toast.LENGTH_SHORT).show()
-                    finish()
+                Toast.makeText(this@AddBookActivity, "Book saved", Toast.LENGTH_SHORT).show()
+                finish()
 
             }
 
         }
+
+        takePicBtn.setOnClickListener {
+            // If already granted, skip the prompt
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.CAMERA // FIX: Changed to CAMERA permission
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                // You already have permission, launch the camera
+                takeThumbnail.launch(null)
+            } else {
+                // You don't have permission, request it.
+                // NOTE: 'requestPermission' is already configured to call 'takeThumbnail.launch(null)' if granted.
+                requestPermission.launch(Manifest.permission.CAMERA) // FIX: Changed to CAMERA permission
+            }
+        }
+
     }
 }
