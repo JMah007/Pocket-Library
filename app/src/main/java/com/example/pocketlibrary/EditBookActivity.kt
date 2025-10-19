@@ -1,13 +1,19 @@
 package com.example.pocketlibrary
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.ui.semantics.text
+import androidx.core.content.ContextCompat
 import coil.load
 
 class EditBookActivity : AppCompatActivity() {
@@ -18,7 +24,29 @@ class EditBookActivity : AppCompatActivity() {
     lateinit var yearInput: EditText
     private lateinit var coverView: ImageView
     lateinit var saveBtn: Button
+    lateinit var takePicBtn: Button
     private val favouritesViewModel: FavouritesViewModel by viewModels()
+
+    private val takeThumbnail = registerForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview(),
+        callback = { bitmap: Bitmap? ->
+            if (bitmap != null) {
+                coverView.setImageBitmap(bitmap)
+                // call method that uploads to firebase cloud
+            } else {
+                Toast.makeText(this, "No image captured", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
+    private val requestPermission = registerForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        callback = { granted ->
+            if (granted) takeThumbnail.launch(null)
+            else Toast.makeText(this, "Permission denied",
+                Toast.LENGTH_SHORT).show()
+        }
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,6 +59,8 @@ class EditBookActivity : AppCompatActivity() {
         coverView = findViewById<ImageView>(R.id.book_cover_imageview)
         yearInput = findViewById(R.id.year_text_input_layout)
         saveBtn = findViewById(R.id.saveBtn)
+        takePicBtn = findViewById(R.id.takePictureBtn)
+
 
 
         val bookId = intent.getStringExtra("id")
@@ -72,6 +102,21 @@ class EditBookActivity : AppCompatActivity() {
 
                     favouritesViewModel.updateBook(updatedBook)
                     finish()
+                }
+            }
+
+            takePicBtn.setOnClickListener {
+                // If already granted, skip the prompt
+                if (ContextCompat.checkSelfPermission(
+                        this, Manifest.permission.CAMERA // FIX: Changed to CAMERA permission
+                    ) == PackageManager.PERMISSION_GRANTED
+                ) {
+                    // You already have permission, launch the camera
+                    takeThumbnail.launch(null)
+                } else {
+                    // You don't have permission, request it.
+                    // NOTE: 'requestPermission' is already configured to call 'takeThumbnail.launch(null)' if granted.
+                    requestPermission.launch(Manifest.permission.CAMERA) // FIX: Changed to CAMERA permission
                 }
             }
         }

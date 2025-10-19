@@ -57,7 +57,7 @@ class AddBookActivity : AppCompatActivity() {
         yearInput = findViewById(R.id.year_text_input_layout)
         coverView = findViewById<ImageView>(R.id.book_cover_imageview)
         saveBtn = findViewById(R.id.saveBtn)
-        takePicBtn = findViewById<Button>(R.id.takePictureBtn)
+        takePicBtn = findViewById(R.id.takePictureBtn)
 
         db = AppDatabase.getDatabase(this)
         bookDAO = db.bookDao()
