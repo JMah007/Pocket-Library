@@ -17,6 +17,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+
 import androidx.lifecycle.observe
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -55,15 +56,23 @@ class DetailedBookView : AppCompatActivity() {
         val bookId = intent.getStringExtra("id")
         if (!bookId.isNullOrEmpty()) {
             favouritesViewModel.getBookById(bookId).observe(this) { book ->
+                book?.let { currentBook ->
+                    titleView.text = book.title
+                    authorView.text = book.author
+                    yearView.text = "Published: ${book?.year}"
+                    coverView.load(book.coverUrl) {
+                        placeholder(R.drawable.ic_launcher_background) // Optional: Show a default image while loading
+                        error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
+                    }
 
-                titleView.text = book?.title
-                authorView.text = book?.author
-                yearView.text = "Published: ${book?.year}"
-                coverView.load(book?.coverUrl) {
-                    placeholder(R.drawable.ic_launcher_background) // Optional: Show a default image while loading
-                    error(R.drawable.ic_launcher_foreground)       // Optional: Show an error image if the URL is bad or loading fails
+                    // Check the boolean value to control button visibility
+                    if (currentBook.addedManually) {
+                        editBtn.visibility = android.view.View.VISIBLE
+                    } else {
+                        // If the book was not added manually, hide the edit and delete buttons
+                        editBtn.visibility = android.view.View.GONE
+                    }
                 }
-
 
                 // Restructure to only show this if the book is added manually by checking the boolean status
                 editBtn.setOnClickListener {
