@@ -2,6 +2,8 @@ package com.example.pocketlibrary
 
 import android.Manifest
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
@@ -17,6 +19,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import coil.load
 
 class DetailedBookView : AppCompatActivity() {
@@ -155,24 +158,32 @@ class DetailedBookView : AppCompatActivity() {
                         val numberIndex =
                             cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
                         val phoneNumber = cursor.getString(numberIndex)
-                        sendSms(phoneNumber)
+                        sendSms(phoneNumber, this)
                     }
                 }
             }
         }
     }
 
-    private fun sendSms(phoneNumber: String) {
+    private fun sendSms(phoneNumber: String, context: Context) {
+
+        val smsUri = "smsto:$phoneNumber".toUri()
+
+        // Get the book details for the message body.
         val book = bookToShare ?: return
         val message = "Check out this book: ${book.title} by ${book.author}"
 
+        val intent = Intent(Intent.ACTION_SENDTO, smsUri).apply {
+            putExtra("sms_body", message)
+        }
+
         try {
-            @Suppress("DEPRECATION")
-            val smsManager = SmsManager.getDefault()
-            smsManager.sendTextMessage(phoneNumber, null, message, null, null)
-            Toast.makeText(this, "Book successfully shared via SMS!", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed to send SMS: ${e.message}", Toast.LENGTH_SHORT).show()
+            context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(
+                context, "No messaging app found.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
