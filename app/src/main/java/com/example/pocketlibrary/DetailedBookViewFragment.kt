@@ -1,9 +1,9 @@
 package com.example.pocketlibrary
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.telephony.SmsManager
@@ -14,16 +14,13 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import coil.load
 
 class DetailedBookViewFragment : Fragment() {
-
-    private val PICK_CONTACT_REQUEST = 1001
-    private val PERMISSIONS_REQUEST_CODE = 2001
 
     private val favouritesViewModel: FavouritesViewModel by viewModels(ownerProducer = { requireActivity() })
 
@@ -38,6 +35,29 @@ class DetailedBookViewFragment : Fragment() {
     private var bookToShare: Book? = null
     private var currentBookId: String? = null
 
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val readGranted = results[Manifest.permission.READ_CONTACTS] == true
+        val smsGranted = results[Manifest.permission.SEND_SMS] == true
+
+        if (readGranted && smsGranted) {
+            pickContactLauncher.launch(null)
+        } else {
+            Toast.makeText(requireContext(), "Permissions required to share book", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickContactLauncher = registerForActivityResult(
+        ActivityResultContracts.PickContact()
+    ) { contactUri: Uri? ->
+        if (contactUri != null) {
+            loadPhoneNumberAndSendSms(contactUri)
+        } else {
+            Toast.makeText(requireContext(), "No contact selected", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         currentBookId = arguments?.getString("id")
@@ -48,7 +68,6 @@ class DetailedBookViewFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Using the same layout as the Activity
         return inflater.inflate(R.layout.activity_detailed_book_view, container, false)
     }
 
@@ -108,53 +127,31 @@ class DetailedBookViewFragment : Fragment() {
             Manifest.permission.SEND_SMS
         ) == PackageManager.PERMISSION_GRANTED
 
-        val permissionsToRequest = mutableListOf<String>()
-        if (!hasReadContacts) permissionsToRequest.add(Manifest.permission.READ_CONTACTS)
-        if (!hasSendSms) permissionsToRequest.add(Manifest.permission.SEND_SMS)
-
-        if (permissionsToRequest.isNotEmpty()) {
-            requestPermissions(
-                permissionsToRequest.toTypedArray(),
-                PERMISSIONS_REQUEST_CODE
-            )
+        if (hasReadContacts && hasSendSms) {
+            pickContactLauncher.launch(null)
         } else {
-            pickContact()
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.READ_CONTACTS,
+                    Manifest.permission.SEND_SMS
+                )
+            )
         }
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            val allGranted = grantResults.all { it == PackageManager.PERMISSION_GRANTED }
-            if (allGranted) {
-                pickContact()
+    private fun loadPhoneNumberAndSendSms(contactUri: Uri) {
+        val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+
+        requireContext().contentResolver.query(
+            contactUri, projection, null, null, null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val numberIndex =
+                    cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val phoneNumber = cursor.getString(numberIndex)
+                sendSms(phoneNumber)
             } else {
-                Toast.makeText(requireContext(), "Permissions required to share book", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    private fun pickContact() {
-        val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
-        startActivityForResult(intent, PICK_CONTACT_REQUEST)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_CONTACT_REQUEST && resultCode == Activity.RESULT_OK) {
-            data?.data?.let { contactUri ->
-                val projection = arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                requireContext().contentResolver.query(contactUri, projection, null, null, null)?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                        val phoneNumber = cursor.getString(numberIndex)
-                        sendSms(phoneNumber)
-                    }
-                }
+                Toast.makeText(requireContext(), "No phone number found", Toast.LENGTH_SHORT).show()
             }
         }
     }
