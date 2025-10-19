@@ -19,7 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.load
 import com.google.firebase.Firebase
-import com.google.firebase.storage.storage
+import com.google.firebase.storage.FirebaseStorage
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -143,13 +143,15 @@ class EditBookActivity : AppCompatActivity() {
         }
 
         Toast.makeText(this, "Uploading cover...", Toast.LENGTH_SHORT).show()
-        val storageRef = Firebase.storage.reference
-        // Create a unique path for the image
+
+        // Replace 'Firebase.storage.reference' with the more explicit call
+        val storageRef = com.google.firebase.storage.FirebaseStorage.getInstance().reference
+
+        // The rest of the function is correct
         val imageRef = storageRef.child("covers/${System.currentTimeMillis()}.jpg")
 
         imageRef.putFile(localFileUri)
             .addOnSuccessListener {
-                // Image uploaded successfully, now get the download URL
                 imageRef.downloadUrl.addOnSuccessListener { downloadUri ->
                     coverPublicUrl = downloadUri.toString()
                     Toast.makeText(this, "Upload complete!", Toast.LENGTH_SHORT).show()
