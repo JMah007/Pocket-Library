@@ -1,6 +1,9 @@
 # Pocket-Library
 
-TODO:
+### This was completed using Android Studio so it is recommended to run it in Android Studio 
+
+
+### Functionality:
 1) Implement layout with Jetpack Compose
    - An activity for the favourites
    - Online book search and a list of books from search will be in main activity page
